@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - 个人发展画像</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .admin-header { text-align: center; margin-bottom: 32px; }
+        .admin-header h1 { font-size: 24px; margin-bottom: 8px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #fff; border-radius: 16px; padding: 24px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .stat-card .num { font-size: 36px; font-weight: 700; color: #1a1a1a; }
+        .stat-card .label { font-size: 14px; color: #888; margin-top: 4px; }
+        .stat-full { background: #fff; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .stat-full h3 { font-size: 16px; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        td, th { padding: 8px 12px; border-bottom: 1px solid #f0ede8; text-align: left; }
+        th { color: #888; font-weight: 500; }
+        .bar-wrap { height: 8px; background: #f0ede8; border-radius: 4px; overflow: hidden; }
+        .bar-fill { height: 100%; background: #1a1a1a; border-radius: 4px; }
+        .admin-link { text-align: center; margin-top: 32px; }
+        .admin-link a { color: #bbb; font-size: 13px; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-header">
+            <h1>📊 管理后台</h1>
+            <p style="color:#888;font-size:14px;">个人发展画像 · 访客统计</p>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="num">{{ stats.total_views }}</div>
+                <div class="label">总访问量</div>
+            </div>
+            <div class="stat-card">
+                <div class="num">{{ stats.home_views }}</div>
+                <div class="label">首页访问</div>
+            </div>
+            <div class="stat-card">
+                <div class="num">{{ stats.total_completions }}</div>
+                <div class="label">完成测试</div>
+            </div>
+            <div class="stat-card">
+                <div class="num">{{ stats.today_completions }}</div>
+                <div class="label">今日完成</div>
+            </div>
+        </div>
+
+        {% if stats.persona_distribution %}
+        <div class="stat-full">
+            <h3>🎭 画像分布</h3>
+            {% set max_c = stats.persona_distribution[0].c if stats.persona_distribution else 1 %}
+            {% for p in stats.persona_distribution %}
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+                <span style="min-width:100px;font-size:14px;">{{ p.primary_persona }}</span>
+                <div class="bar-wrap" style="flex:1;">
+                    <div class="bar-fill" style="width:{{ (p.c / max_c * 100)|int }}%"></div>
+                </div>
+                <span style="font-size:14px;font-weight:600;min-width:30px;text-align:right;">{{ p.c }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if stats.recent_completions %}
+        <div class="stat-full">
+            <h3>🕐 最近完成</h3>
+            <table>
+                <tr><th>主画像</th><th>副画像</th><th>时间</th></tr>
+                {% for r in stats.recent_completions %}
+                <tr>
+                    <td>{{ r.primary_persona }}</td>
+                    <td>{{ r.secondary_persona }}</td>
+                    <td style="color:#888;font-size:12px;">{{ r.created_at[:19] }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endif %}
+
+        <div class="admin-link">
+            <a href="/">← 返回首页</a>
+        </div>
+    </div>
+</body>
+</html>

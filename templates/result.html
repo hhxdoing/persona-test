@@ -170,6 +170,7 @@
                 </div>
 
                 <div class="result-actions">
+                    <button class="btn btn-share" id="shareBtn" onclick="shareResult()">📤 分享我的结果</button>
                     <button class="btn btn-copy" id="copyBtn" onclick="copyResult()">📋 复制完整报告</button>
                 </div>
                 <div class="result-actions" style="margin-top: 0;">
@@ -208,6 +209,34 @@
             }).catch(() => {
                 alert('复制失败，请手动复制');
             });
+        }
+
+        function shareResult() {
+            const shareText = [
+                `🧠 我的个人发展画像：${data.primary_name} × ${data.secondary_name}`,
+                `${data.primary_one_liner}`,
+                ``,
+                `👉 测测你的：${window.location.origin}/quiz`,
+            ].join('\n');
+
+            if (navigator.share) {
+                navigator.share({
+                    title: '我的个人发展画像',
+                    text: shareText,
+                    url: window.location.origin,
+                }).catch(() => {});
+            } else {
+                // 不支持 Web Share API 时复制分享文本
+                navigator.clipboard.writeText(shareText).then(() => {
+                    const btn = document.getElementById('shareBtn');
+                    btn.textContent = '✅ 分享链接已复制';
+                    setTimeout(() => {
+                        btn.textContent = '📤 分享我的结果';
+                    }, 2000);
+                }).catch(() => {
+                    alert('复制失败，请手动复制');
+                });
+            }
         }
     </script>
 </body>
