@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测测你的个人发展画像</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="hero-card">
+            <div class="hero-icon">🧠</div>
+            <h1 class="hero-title">测测你的个人发展画像</h1>
+            <p class="hero-hook">你不是不知道自己是谁，只是还没看见自己的行动模式。</p>
+            <p class="hero-subtitle">
+                36 道真实行为选择题，测出你的驱动力、能力结构、执行模式和职业适配。
+            </p>
+            <div class="hero-tags">
+                <span class="hero-tag">驱动力</span>
+                <span class="hero-tag-divider">｜</span>
+                <span class="hero-tag">执行模式</span>
+                <span class="hero-tag-divider">｜</span>
+                <span class="hero-tag">职业适配</span>
+            </div>
+            <a href="{{ url_for('quiz') }}" class="btn btn-primary">开始测试</a>
+        </div>
+
+        <div class="card value-prop">
+            <h3>完成后你会得到什么</h3>
+            <div class="vp-grid">
+                <div class="vp-item">
+                    <span class="vp-icon">🎯</span>
+                    <div>
+                        <strong>主画像 × 副画像</strong>
+                        <p>你的核心驱动力与辅助行动模式</p>
+                    </div>
+                </div>
+                <div class="vp-item">
+                    <span class="vp-icon">⭐</span>
+                    <div>
+                        <strong>核心优势与主要卡点</strong>
+                        <p>你的天赋所在 + 可能绊倒你的地方</p>
+                    </div>
+                </div>
+                <div class="vp-item">
+                    <span class="vp-icon">🧭</span>
+                    <div>
+                        <strong>适合方向</strong>
+                        <p>匹配你行为模式的工作与成长路径</p>
+                    </div>
+                </div>
+                <div class="vp-item">
+                    <span class="vp-icon">💡</span>
+                    <div>
+                        <strong>具体行动建议</strong>
+                        <p>看完就能用的下一步行动方向</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="hero-desc" style="text-align:center; margin-top: 16px;">
+            本测试仅用于自我认知和个人发展参考，不构成心理诊断或职业决策依据。
+        </p>
+    </div>
+</body>
+</html>

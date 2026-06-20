@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>答题 - 测测你的个人发展画像</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="quiz-header">
+            <h1>个人发展画像测试</h1>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="progress-text" id="progressText">1 / {{ questions|length }}</span>
+        </div>
+
+        <div id="quizContainer">
+            {% for q in questions %}
+            <div class="question-card {% if not loop.first %}hidden{% endif %}" data-index="{{ loop.index0 }}" id="q{{ q.id }}">
+                <h2 class="question-number">第 {{ loop.index }} / {{ questions|length }} 题</h2>
+                <p class="question-text">{{ q.question }}</p>
+                <div class="options">
+                    {% for opt in q.options %}
+                    <button class="option-btn" data-qid="{{ q.id }}" data-oidx="{{ loop.index0 }}" onclick="selectOption(this)">
+                        <span class="option-label">{{ ['A', 'B', 'C', 'D'][loop.index0] }}</span>
+                        <span class="option-text">{{ opt.text }}</span>
+                    </button>
+                    {% endfor %}
+                </div>
+                <p class="question-hint">💡 请按真实行为选择，不要选你希望成为的样子。</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="quiz-nav">
+            <button class="btn btn-secondary" id="prevBtn" onclick="prevQuestion()" disabled>上一题</button>
+            <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>下一题</button>
+            <button class="btn btn-success hidden" id="submitBtn" onclick="submitQuiz()">查看结果</button>
+        </div>
+    </div>
+
+    <script>
+        const totalQuestions = {{ questions|length }};
+        let currentIndex = 0;
+        const answers = {};
+
+        function selectOption(btn) {
+            const parent = btn.closest('.question-card');
+            parent.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            answers[btn.dataset.qid] = parseInt(btn.dataset.oidx);
+            updateNavButtons();
+        }
+
+        function showQuestion(index) {
+            document.querySelectorAll('.question-card').forEach((card, i) => {
+                card.classList.toggle('hidden', i !== index);
+            });
+            currentIndex = index;
+            updateProgress();
+            updateNavButtons();
+        }
+
+        function nextQuestion() {
+            if (currentIndex < totalQuestions - 1) showQuestion(currentIndex + 1);
+        }
+
+        function prevQuestion() {
+            if (currentIndex > 0) showQuestion(currentIndex - 1);
+        }
+
+        function updateProgress() {
+            const fill = ((currentIndex + 1) / totalQuestions) * 100;
+            document.getElementById('progressFill').style.width = fill + '%';
+            document.getElementById('progressText').textContent = (currentIndex + 1) + ' / ' + totalQuestions;
+        }
+
+        function updateNavButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const currentAnswered = answers[currentIndex + 1] !== undefined;
+            const allAnswered = Object.keys(answers).length === totalQuestions;
+
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = !currentAnswered;
+
+            if (currentIndex === totalQuestions - 1 && allAnswered) {
+                nextBtn.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                submitBtn.classList.add('hidden');
+            }
+        }
+
+        function submitQuiz() {
+            if (Object.keys(answers).length < totalQuestions) {
+                alert('请完成所有题目后再提交！');
+                return;
+            }
+            const btn = document.getElementById('submitBtn');
+            btn.textContent = '分析中...';
+            btn.disabled = true;
+
+            fetch('/api/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ answers: answers })
+            })
+            .then(res => res.json())
+            .then(data => {
+                sessionStorage.setItem('personaResult', JSON.stringify(data));
+                window.location.href = '/result';
+            })
+            .catch(() => {
+                alert('提交失败，请重试');
+                btn.textContent = '查看结果';
+                btn.disabled = false;
+            });
+        }
+
+        // 键盘导航
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight') {
+                const btn = document.getElementById('nextBtn');
+                if (!btn.classList.contains('hidden') && !btn.disabled) nextQuestion();
+            }
+            if (e.key === 'ArrowLeft') {
+                const btn = document.getElementById('prevBtn');
+                if (!btn.disabled) prevQuestion();
+            }
+        });
+    </script>
+</body>
+</html>

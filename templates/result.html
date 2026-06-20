@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试结果 - 测测你的个人发展画像</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div id="resultContainer">
+            <div class="loading" id="loadingIndicator">
+                <div class="loading-spinner"></div>
+                <p>正在生成你的个人发展画像...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FIRST_ACTIONS = {
+            "creator": "今天把一个想法写成 300 字说明，而不是继续只在脑子里想。",
+            "driver": "今天选一个拖了很久的任务，设定 25 分钟倒计时，直接做完它。",
+            "stable": "今天用一个新的方式做一件日常任务——换个顺序、换个工具、换个节奏。",
+            "explorer": "今天选一个你开了头但没做完的项目，花 30 分钟推进它。",
+            "sensitive": "今天把一条你收到的反馈写下来，区分哪些是事实、哪些是感受。",
+            "freedom": "今天给自己设定一个最小规则并遵守它，比如「上午不刷手机」。"
+        };
+
+        const data = JSON.parse(sessionStorage.getItem('personaResult'));
+
+        if (!data) {
+            document.getElementById('resultContainer').innerHTML = `
+                <div class="hero-card">
+                    <h2>没有找到测试结果</h2>
+                    <p>请先完成测试。</p>
+                    <a href="/quiz" class="btn btn-primary">去测试</a>
+                </div>
+            `;
+        } else {
+            renderResult(data);
+        }
+
+        function renderResult(data) {
+            document.getElementById('loadingIndicator').style.display = 'none';
+            const container = document.getElementById('resultContainer');
+
+            // 得分条
+            const maxScore = Math.max(...data.all_scores.map(s => s.score));
+            let scoresHtml = '';
+            data.all_scores.forEach((s) => {
+                const pct = maxScore > 0 ? Math.round((s.score / maxScore) * 100) : 0;
+                const isPrimary = s.key === data.primary_key;
+                const isSecondary = s.key === data.secondary_key && !isPrimary;
+                const barClass = isPrimary ? 'bar-primary' : isSecondary ? 'bar-secondary' : '';
+                scoresHtml += `
+                    <div class="score-item">
+                        <div class="score-label">
+                            <span class="score-icon">${s.icon}</span>
+                            <span class="score-name ${isPrimary ? 'text-primary' : isSecondary ? 'text-secondary' : ''}">${s.name}${isPrimary ? ' <span class="badge">主</span>' : isSecondary ? ' <span class="badge badge-secondary">副</span>' : ''}</span>
+                        </div>
+                        <div class="score-bar-wrap">
+                            <div class="score-bar ${barClass}" style="width: ${pct}%"></div>
+                        </div>
+                        <span class="score-value">${s.score}</span>
+                    </div>
+                `;
+            });
+
+            // 标签
+            let strengthsHtml = '', blindSpotsHtml = '', fitRolesHtml = '';
+            data.primary_strengths.forEach(s => { strengthsHtml += `<span class="tag">${s}</span>`; });
+            data.primary_blind_spots.forEach(s => { blindSpotsHtml += `<span class="tag tag-blind">${s}</span>`; });
+            data.primary_fit_roles.forEach(s => { fitRolesHtml += `<span class="tag">${s}</span>`; });
+
+            // 发展建议
+            let suggestionsHtml = '';
+            data.primary_suggestions.forEach(s => { suggestionsHtml += `<li>${s}</li>`; });
+
+            // 7天计划
+            let planHtml = '';
+            data.seven_day_plan.forEach(item => { planHtml += `<li>${item}</li>`; });
+
+            // 第一行动
+            const firstAction = FIRST_ACTIONS[data.primary_key] || '';
+
+            // 置信度
+            const primaryScore = data.all_scores.find(s => s.key === data.primary_key).score;
+            const secondaryScore = data.all_scores.find(s => s.key === data.secondary_key).score;
+            const scoreDiff = primaryScore - secondaryScore;
+            const showMixedNotice = scoreDiff <= 1;
+
+            container.innerHTML = `
+                <div class="result-header">
+                    <h1 class="result-title">你的个人发展画像</h1>
+                    <div class="result-combo">
+                        <span class="combo-primary">${data.primary_name}</span>
+                        <span class="combo-times">×</span>
+                        <span class="combo-secondary">${data.secondary_name}</span>
+                    </div>
+                    <div class="combo-icons">
+                        <span class="combo-icon">${data.primary_icon}</span>
+                        <span class="combo-icon">${data.secondary_icon}</span>
+                    </div>
+                </div>
+
+                ${showMixedNotice ? `
+                <div class="card card-notice">
+                    <p>⚠️ 你的前两类画像得分很接近（相差 ${scoreDiff} 分），说明你同时具备这两类特征，结果更适合看作混合画像。</p>
+                </div>` : ''}
+
+                <div class="card card-highlight">
+                    <h3>💬 一句话总结</h3>
+                    <p class="one-liner">${data.primary_one_liner}</p>
+                </div>
+
+                <div class="card report-card">
+                    <h3>📖 你的画像解读</h3>
+                    <p class="report-text">${data.primary_long_report}</p>
+                </div>
+
+                <div class="card report-card">
+                    <h3>🔗 副画像补充：${data.secondary_name}</h3>
+                    <p class="report-text">${data.secondary_report}</p>
+                </div>
+
+                <div class="card ending-card">
+                    <img class="ending-image" src="/static/${data.ending_image}" alt="${data.primary_name} 结尾画面">
+                    <h3>${data.ending_title}</h3>
+                    <p class="ending-text">${data.ending_text}</p>
+                </div>
+
+                <div class="card card-action">
+                    <h3>🎯 你的第一行动</h3>
+                    <p class="action-text">${firstAction}</p>
+                </div>
+
+                <div class="card">
+                    <h3>📌 综合定位</h3>
+                    <p class="position-text">${data.combined_position}</p>
+                </div>
+
+                <div class="card">
+                    <h3>⭐ 核心优势</h3>
+                    <div class="tags-wrap">${strengthsHtml}</div>
+                </div>
+
+                <div class="card">
+                    <h3>⚠️ 主要卡点</h3>
+                    <div class="tags-wrap">${blindSpotsHtml}</div>
+                </div>
+
+                <div class="card">
+                    <h3>🎯 适合方向</h3>
+                    <div class="tags-wrap">${fitRolesHtml}</div>
+                </div>
+
+                <div class="card">
+                    <h3>💡 发展建议</h3>
+                    <ul class="suggestion-list">${suggestionsHtml}</ul>
+                </div>
+
+                <div class="card">
+                    <h3>🗓️ 你的 7 天行动计划</h3>
+                    <ol class="plan-list">${planHtml}</ol>
+                </div>
+
+                <div class="card">
+                    <h3>📊 六类画像得分</h3>
+                    <div class="scores-wrap">${scoresHtml}</div>
+                </div>
+
+                <div class="result-actions">
+                    <button class="btn btn-copy" id="copyBtn" onclick="copyResult()">📋 复制完整报告</button>
+                </div>
+                <div class="result-actions" style="margin-top: 0;">
+                    <a href="/quiz" class="btn btn-primary">重新测试</a>
+                    <a href="/" class="btn btn-secondary">返回首页</a>
+                </div>
+
+                <div class="disclaimer">
+                    <p>本结果基于你的自选答案生成，仅用于自我认知和个人发展参考，不构成心理诊断、职业测评结论或任何决策依据。</p>
+                </div>
+            `;
+
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyResult() {
+            const firstAction = FIRST_ACTIONS[data.primary_key] || '';
+            const planText = data.seven_day_plan.map((item, i) => `${item}`).join('\n');
+
+            const text = [
+                `我的个人发展画像：${data.primary_name} × ${data.secondary_name}`,
+                `一句话总结：${data.primary_one_liner}`,
+                `画像解读：${data.primary_long_report}`,
+                `副画像补充（${data.secondary_name}）：${data.secondary_report}`,
+                `我的第一行动：${firstAction}`,
+                `我的 7 天行动计划：\n${planText}`,
+                `结尾：${data.ending_title} — ${data.ending_text}`,
+            ].join('\n\n');
+
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copyBtn');
+                btn.textContent = '✅ 已复制';
+                setTimeout(() => {
+                    btn.textContent = '📋 复制完整报告';
+                }, 2000);
+            }).catch(() => {
+                alert('复制失败，请手动复制');
+            });
+        }
+    </script>
+</body>
+</html>
